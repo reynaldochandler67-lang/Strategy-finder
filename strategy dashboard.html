@@ -1,0 +1,918 @@
+<!--
+  Strategy Finder Dashboard + EA Generator
+  Libre para usar, modificar y redistribuir sin restricciones.
+  MIT License
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy Finder Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0a0d12; --surface:#111520; --border:#1e2535;
+    --accent:#00e5ff; --accent2:#7c3aed;
+    --green:#00c896; --red:#ff4d6d; --yellow:#fbbf24;
+    --text:#e2e8f0; --muted:#64748b;
+    --font:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+  header{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100}
+  .logo{display:flex;align-items:center;gap:.75rem}
+  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+  .logo-text{font-size:1.1rem;font-weight:600;letter-spacing:-.02em}
+  .logo-sub{font-size:.7rem;color:var(--muted);font-family:var(--mono)}
+  .header-actions{display:flex;gap:.75rem;align-items:center}
+  .badge{padding:.25rem .75rem;border-radius:9999px;font-size:.72rem;font-weight:500;font-family:var(--mono)}
+  .badge-live{background:rgba(0,200,150,.15);color:var(--green);border:1px solid rgba(0,200,150,.3)}
+  .badge-count{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid rgba(0,229,255,.2)}
+  .container{max-width:1400px;margin:0 auto;padding:1.5rem 2rem}
+  .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden;transition:border-color .2s}
+  .stat-card:hover{border-color:var(--accent)}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity .2s}
+  .stat-card:hover::before{opacity:1}
+  .stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem}
+  .stat-value{font-size:1.8rem;font-weight:700;font-family:var(--mono);letter-spacing:-.03em}
+  .stat-sub{font-size:.72rem;color:var(--muted);margin-top:.25rem}
+  .stat-green{color:var(--green)} .stat-cyan{color:var(--accent)} .stat-yellow{color:var(--yellow)}
+  .filters-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
+  .filter-group{display:flex;flex-direction:column;gap:.4rem}
+  .filter-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  select,input[type=range],input[type=number]{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.4rem .75rem;font-size:.82rem;font-family:var(--font);outline:none;transition:border-color .2s}
+  select:focus,input:focus{border-color:var(--accent)}
+  input[type=range]{padding:0;width:120px;accent-color:var(--accent)}
+  .btn{padding:.5rem 1.25rem;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);font-size:.82rem;font-weight:500;transition:all .2s}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .btn-primary:hover{opacity:.85;transform:translateY(-1px)}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-ea{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
+  .btn-ea:hover{opacity:.85;transform:translateY(-1px)}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .table-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+  .table-title{font-weight:600;font-size:.9rem}
+  .table-count{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+  table{width:100%;border-collapse:collapse}
+  th{padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{color:var(--accent)}
+  td{padding:.75rem 1rem;font-size:.82rem;border-bottom:1px solid rgba(30,37,53,.5);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr{transition:background .15s}
+  tr:hover td{background:rgba(0,229,255,.03)}
+  tr.selected td{background:rgba(0,229,255,.06)}
+  .mono{font-family:var(--mono);font-size:.8rem}
+  .pill{display:inline-block;padding:.15rem .6rem;border-radius:9999px;font-size:.68rem;font-weight:500;font-family:var(--mono)}
+  .pill-h4{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid rgba(0,229,255,.2)}
+  .pill-h1{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
+  .pill-m15{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.2)}
+  .pill-pass{background:rgba(0,200,150,.12);color:var(--green);border:1px solid rgba(0,200,150,.3)}
+  .pill-fail{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.2)}
+  .pill-trend{background:rgba(0,229,255,.08);color:var(--accent)}
+  .pill-mom{background:rgba(124,58,237,.12);color:#a78bfa}
+  .pill-mean{background:rgba(251,191,36,.1);color:var(--yellow)}
+  .pill-patt{background:rgba(255,77,109,.1);color:#ff8fa3}
+  .pf-group{display:flex;gap:4px;align-items:center}
+  .pf-val{font-family:var(--mono);font-size:.78rem}
+  .pf-arrow{font-size:.65rem;color:var(--muted)}
+  .pf-up{color:var(--green)} .pf-down{color:var(--red)} .pf-flat{color:var(--yellow)}
+  .progress-wrap{display:flex;align-items:center;gap:8px}
+  .progress-bar{height:4px;border-radius:2px;flex:1;min-width:60px;background:var(--border)}
+  .progress-fill{height:100%;border-radius:2px;transition:width .3s}
+  .progress-label{font-family:var(--mono);font-size:.75rem;min-width:36px;text-align:right}
+  .detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-top:1rem;display:none;animation:slideIn .2s ease}
+  .detail-panel.visible{display:block}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+  .detail-section{background:var(--bg);border-radius:8px;padding:1rem;border:1px solid var(--border)}
+  .detail-section-title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
+  .kpi-row{display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;border-bottom:1px solid rgba(30,37,53,.5)}
+  .kpi-row:last-child{border-bottom:none}
+  .kpi-name{font-size:.75rem;color:var(--muted)}
+  .kpi-val{font-family:var(--mono);font-size:.8rem}
+  .signals-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem}
+  .signal-line{display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.5rem}
+  .signal-label{font-size:.7rem;font-weight:600;min-width:48px;text-transform:uppercase;letter-spacing:.05em}
+  .signal-long{color:var(--green)} .signal-short{color:var(--red)} .signal-filter{color:var(--yellow)}
+  .signal-val{font-family:var(--mono);font-size:.75rem;color:var(--text)}
+  .period-table{width:100%;border-collapse:collapse;margin-top:.5rem}
+  .period-table th{font-size:.68rem;color:var(--muted);padding:.4rem .75rem;text-align:center}
+  .period-table td{font-family:var(--mono);font-size:.78rem;padding:.4rem .75rem;text-align:center}
+  .period-train{color:var(--accent)} .period-valid{color:var(--yellow)} .period-fwd{color:var(--green)}
+  .empty-state{text-align:center;padding:3rem;color:var(--muted)}
+  .empty-icon{font-size:2.5rem;margin-bottom:1rem}
+  .load-section{background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;margin-bottom:1.5rem;transition:border-color .2s}
+  .load-section:hover{border-color:var(--accent)}
+  .load-title{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+  .load-sub{font-size:.82rem;color:var(--muted);margin-bottom:1.25rem}
+  .drop-area{border:1px dashed var(--border);border-radius:8px;padding:1.5rem;background:var(--bg);cursor:pointer;transition:all .2s;margin-bottom:1rem}
+  .drop-area:hover,.drop-area.drag-over{border-color:var(--accent);background:rgba(0,229,255,.03)}
+  .drop-area input{display:none}
+  .drop-icon{font-size:1.5rem;margin-bottom:.5rem}
+  .drop-text{font-size:.82rem;color:var(--muted)}
+
+  /* EA Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.visible{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:900px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+  .modal-title{font-weight:600;font-size:1rem}
+  .modal-body{flex:1;overflow-y:auto;padding:1.5rem}
+  .modal-footer{display:flex;gap:.75rem;padding:1.25rem 1.5rem;border-top:1px solid var(--border);flex-wrap:wrap}
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1.25rem;font-family:var(--mono);font-size:.75rem;line-height:1.6;overflow-x:auto;white-space:pre;color:#c9d1d9;max-height:50vh;overflow-y:auto}
+  .code-block .kw{color:#ff7b72}
+  .code-block .str{color:#a5d6ff}
+  .code-block .cm{color:#8b949e}
+  .code-block .num{color:#79c0ff}
+  .code-block .fn{color:#d2a8ff}
+
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+  @media(max-width:900px){
+    .stats-row{grid-template-columns:repeat(2,1fr)}
+    .detail-grid{grid-template-columns:1fr}
+    header{padding:.75rem 1rem}
+    .container{padding:1rem}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">Strategy Finder</div>
+      <div class="logo-sub">XAUUSD · EURUSD · Multi-TF</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="badge badge-live">● ACTIVO</span>
+    <span class="badge badge-count" id="totalBadge">0 estrategias</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="load-section" id="loadSection">
+    <div class="load-title">📂 Cargar estrategias</div>
+    <div class="load-sub">Exporta el CSV desde el VPS y cárgalo aquí<br>
+      <code style="font-size:.78rem;color:var(--accent)">python query_universe.py --top 1000 --no-passed-only --export data.csv</code>
+    </div>
+    <div class="drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".csv" onchange="handleFile(event)">
+      <div class="drop-icon">📊</div>
+      <div class="drop-text">Haz clic o arrastra tu archivo CSV aquí</div>
+    </div>
+    <button class="btn btn-primary" onclick="loadDemo()">▶ Ver demo con datos de ejemplo</button>
+  </div>
+
+  <div class="stats-row" id="statsRow" style="display:none">
+    <div class="stat-card"><div class="stat-label">Total en DB</div><div class="stat-value stat-cyan" id="statTotal">0</div><div class="stat-sub">evaluadas</div></div>
+    <div class="stat-card"><div class="stat-label">Pasan 3 períodos</div><div class="stat-value stat-green" id="statPassed">0</div><div class="stat-sub">Train+Valid+Forward</div></div>
+    <div class="stat-card"><div class="stat-label">Mejor PF Forward</div><div class="stat-value stat-green" id="statBestPF">-</div><div class="stat-sub">profit factor</div></div>
+    <div class="stat-card"><div class="stat-label">Menor DD Forward</div><div class="stat-value stat-yellow" id="statBestDD">-</div><div class="stat-sub">drawdown</div></div>
+    <div class="stat-card"><div class="stat-label">Mayor consistencia</div><div class="stat-value stat-cyan" id="statBestCons">-</div><div class="stat-sub">score</div></div>
+  </div>
+
+  <div class="filters-bar" id="filtersBar" style="display:none">
+    <div class="filter-group"><div class="filter-label">Asset</div>
+      <select id="filterAsset" onchange="applyFilters()">
+        <option value="">Todos</option><option value="XAUUSD">XAUUSD</option><option value="EURUSD">EURUSD</option>
+      </select>
+    </div>
+    <div class="filter-group"><div class="filter-label">Timeframe</div>
+      <select id="filterTF" onchange="applyFilters()">
+        <option value="">Todos</option><option value="H4">H4</option><option value="H1">H1</option><option value="M15">M15</option>
+      </select>
+    </div>
+    <div class="filter-group"><div class="filter-label">Categoría</div>
+      <select id="filterCat" onchange="applyFilters()">
+        <option value="">Todas</option>
+        <option value="trend_following">Trend Following</option>
+        <option value="momentum">Momentum</option>
+        <option value="mean_reversion">Mean Reversion</option>
+        <option value="pattern_based">Pattern Based</option>
+      </select>
+    </div>
+    <div class="filter-group"><div class="filter-label">Solo aprobadas</div>
+      <select id="filterPass" onchange="applyFilters()">
+        <option value="1">Sí</option><option value="">Todas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">DD máx: <span id="ddVal">-30%</span></div>
+      <input type="range" id="filterDD" min="-50" max="-1" value="-30" step="1"
+             oninput="document.getElementById('ddVal').textContent=this.value+'%';applyFilters()">
+    </div>
+    <div class="filter-group"><div class="filter-label">Min PF Forward</div>
+      <input type="number" id="filterPF" value="1.0" min="1.0" max="3.0" step="0.05" style="width:80px" oninput="applyFilters()">
+    </div>
+    <div class="filter-group"><div class="filter-label">Ordenar por</div>
+      <select id="sortBy" onchange="applyFilters()">
+        <option value="consistency_score">Consistencia</option>
+        <option value="fwd_pf">PF Forward</option>
+        <option value="fwd_max_dd">DD Forward</option>
+        <option value="fwd_calmar">Calmar</option>
+        <option value="fwd_trades">Trades</option>
+        <option value="fwd_sharpe">Sharpe</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost" onclick="resetFilters()">↺ Reset</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('loadSection').style.display='block'">📂 CSV</button>
+  </div>
+
+  <div class="table-wrap" id="tableWrap" style="display:none">
+    <div class="table-header">
+      <div class="table-title">Estrategias encontradas</div>
+      <div class="table-count" id="tableCount">0 resultados</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('id')">ID</th>
+            <th>Nombre</th>
+            <th>Asset</th>
+            <th>TF</th>
+            <th>Cat</th>
+            <th onclick="sortTable('consistency_score')">Consist.</th>
+            <th>PF Tr→Va→Fwd</th>
+            <th onclick="sortTable('fwd_max_dd')">DD Fwd</th>
+            <th onclick="sortTable('fwd_calmar')">Calmar</th>
+            <th onclick="sortTable('fwd_trades')">Trades</th>
+            <th>3P</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="detail-panel" id="detailPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <div>
+        <div style="font-size:1.1rem;font-weight:600" id="detailTitle">-</div>
+        <div style="font-size:.78rem;color:var(--muted);font-family:var(--mono)" id="detailSub">-</div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeDetail()">✕ Cerrar</button>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-section">
+        <div class="detail-section-title">📊 KPIs por período</div>
+        <table class="period-table">
+          <thead><tr><th style="text-align:left">Métrica</th><th class="period-train">Train</th><th class="period-valid">Valid</th><th class="period-fwd">Forward</th></tr></thead>
+          <tbody id="detailPeriod"></tbody>
+        </table>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">🎯 Métricas Forward</div>
+        <div id="detailMetrics"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">⚙️ Condiciones de entrada</div>
+        <div id="detailSignals"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn-ea" onclick="generateEA()">🤖 Generar EA MQL5</button>
+      <button class="btn btn-primary" onclick="exportStrategy()">📥 Exportar JSON</button>
+      <button class="btn btn-ghost" onclick="copyParams()">📋 Copiar parámetros</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- EA MODAL -->
+<div class="modal-overlay" id="eaModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="eaModalTitle">Expert Advisor MQL5</div>
+      <button class="btn btn-ghost" style="padding:.3rem .75rem" onclick="closeEAModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:1rem;font-size:.82rem;color:var(--muted)">
+        Copia este código y pégalo en MetaEditor (F4 en MT5). Compila con F7.
+      </div>
+      <div class="code-block" id="eaCode"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="downloadEA()">⬇ Descargar .mq5</button>
+      <button class="btn btn-ghost" onclick="copyEA()">📋 Copiar código</button>
+      <button class="btn btn-ghost" onclick="closeEAModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData=[], filtered=[], selectedId=null, sortAsc=false, sortCol='consistency_score';
+let currentEACode='', currentEAName='';
+
+// Drag & drop
+const dropArea=document.getElementById('dropArea');
+dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.classList.add('drag-over')});
+dropArea.addEventListener('dragleave',()=>dropArea.classList.remove('drag-over'));
+dropArea.addEventListener('drop',e=>{e.preventDefault();dropArea.classList.remove('drag-over');if(e.dataTransfer.files[0])parseFile(e.dataTransfer.files[0])});
+function handleFile(e){if(e.target.files[0])parseFile(e.target.files[0])}
+
+function parseFile(file){
+  const r=new FileReader();
+  r.onload=ev=>{allData=parseCSV(ev.target.result);document.getElementById('loadSection').style.display='none';initDashboard()};
+  r.readAsText(file);
+}
+
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line=>{
+    const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));
+    const obj={};
+    headers.forEach((h,i)=>{const v=vals[i]||'';obj[h]=isNaN(v)||v===''?v:parseFloat(v)});
+    return obj;
+  }).filter(r=>r.id);
+}
+
+function loadDemo(){
+  const cats=['trend_following','momentum','mean_reversion','pattern_based'];
+  const tfs=['H4','H4','H1','M15'],assets=['XAUUSD','XAUUSD','EURUSD'];
+  const longs=[['macd_crossover'],['donchian_breakout','obv_rising'],['rsi_oversold'],['pattern_engulfing']];
+  const shorts=[['cci_cross_zero'],['ema_cross_fast_slow'],['rsi_overbought'],['pattern_pin_bar']];
+  const filts=[['supertrend_bull','ema_crossover_bullish'],['above_ema_trend'],['ema_crossover_bullish']];
+  allData=Array.from({length:60},(_,i)=>{
+    const pft=1.05+Math.random()*.4,pfv=pft+(Math.random()-.3)*.3,pff=pfv+(Math.random()-.2)*.3;
+    const dd=-(2+Math.random()*12),tf=tfs[i%tfs.length],tm=tf==='H4'?1:tf==='H1'?4:8;
+    return {
+      id:100+i,name:`G00${i%5}_I00${String(i%10).padStart(2,'0')}_${cats[i%4].slice(0,4)}`,
+      category:cats[i%cats.length],asset:assets[i%assets.length],timeframe:tf,
+      all_periods_pass:pft>1.05&&pfv>1.0&&pff>1.0?1:0,
+      consistency_score:70+Math.random()*27,
+      train_pf:pft,valid_pf:pfv,fwd_pf:pff,
+      train_max_dd:-(5+Math.random()*15),valid_max_dd:-(4+Math.random()*12),fwd_max_dd:dd,
+      fwd_calmar:Math.abs(pff*5/Math.abs(dd)),fwd_sharpe:.1+Math.random()*.5,
+      fwd_recovery:1+Math.random()*5,fwd_trades:Math.floor((30+Math.random()*200)*tm/4),
+      fwd_win_rate:38+Math.random()*18,fwd_annual_return:(pff-1)*10+Math.random()*5,
+      fwd_expectancy:5+Math.random()*30,fwd_payoff:1.3+Math.random()*.8,
+      entry_long:JSON.stringify(longs[i%longs.length]),
+      entry_short:JSON.stringify(shorts[i%shorts.length]),
+      filters:JSON.stringify(filts[i%filts.length]),
+      params:JSON.stringify({macd_fast:12,macd_slow:26,macd_signal:9,ema_fast:20,ema_slow:200,rsi_period:14,cci_period:20,don_period:20,st_period:14,st_mult:3.0}),
+      starred:0,
+    };
+  });
+  allData.unshift({
+    id:279,name:'G000_I0005_tren',category:'trend_following',asset:'XAUUSD',timeframe:'H4',all_periods_pass:1,
+    consistency_score:95.6,train_pf:1.27,valid_pf:1.30,fwd_pf:1.46,
+    train_max_dd:-5.26,valid_max_dd:-4.90,fwd_max_dd:-6.04,
+    fwd_calmar:1.30,fwd_sharpe:.44,fwd_recovery:4.77,fwd_trades:138,fwd_win_rate:45.65,
+    fwd_annual_return:6.77,fwd_expectancy:17.83,fwd_payoff:1.65,
+    entry_long:"['donchian_breakout', 'obv_rising']",
+    entry_short:"['cci_cross_zero']",
+    filters:"['supertrend_bull', 'ema_crossover_bullish']",
+    params:JSON.stringify({macd_fast:12,macd_slow:26,macd_signal:9,ema_fast:20,ema_slow:200,rsi_period:10,cci_period:20,don_period:20,st_period:14,st_mult:3.0,obv_period:20}),
+    starred:1,
+  });
+  document.getElementById('loadSection').style.display='none';
+  initDashboard();
+}
+
+function initDashboard(){
+  document.getElementById('statsRow').style.display='grid';
+  document.getElementById('filtersBar').style.display='flex';
+  document.getElementById('tableWrap').style.display='block';
+  updateStats(); applyFilters();
+}
+
+function updateStats(){
+  const p=allData.filter(r=>r.all_periods_pass==1);
+  const pfs=p.map(r=>parseFloat(r.fwd_pf)||0).filter(x=>x>0);
+  const dds=p.map(r=>parseFloat(r.fwd_max_dd)||0).filter(x=>x<0);
+  const cons=p.map(r=>parseFloat(r.consistency_score)||0);
+  document.getElementById('statTotal').textContent=allData.length;
+  document.getElementById('statPassed').textContent=p.length;
+  document.getElementById('statBestPF').textContent=pfs.length?Math.max(...pfs).toFixed(3):'-';
+  document.getElementById('statBestDD').textContent=dds.length?Math.max(...dds).toFixed(2)+'%':'-';
+  document.getElementById('statBestCons').textContent=cons.length?Math.max(...cons).toFixed(1):'-';
+  document.getElementById('totalBadge').textContent=allData.length+' estrategias';
+}
+
+function applyFilters(){
+  const asset=document.getElementById('filterAsset').value;
+  const tf=document.getElementById('filterTF').value;
+  const cat=document.getElementById('filterCat').value;
+  const pass=document.getElementById('filterPass').value;
+  const maxDD=parseFloat(document.getElementById('filterDD').value);
+  const minPF=parseFloat(document.getElementById('filterPF').value);
+  const sort=document.getElementById('sortBy').value;
+  filtered=allData.filter(r=>{
+    if(asset&&r.asset!==asset)return false;
+    if(tf&&r.timeframe!==tf)return false;
+    if(cat&&r.category!==cat)return false;
+    if(pass&&r.all_periods_pass!=1)return false;
+    if((parseFloat(r.fwd_max_dd)||0)<maxDD)return false;
+    if((parseFloat(r.fwd_pf)||0)<minPF)return false;
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    let va=parseFloat(a[sort])||0,vb=parseFloat(b[sort])||0;
+    if(sort==='fwd_max_dd')return vb-va;
+    return sortAsc?va-vb:vb-va;
+  });
+  renderTable();
+}
+
+function sortTable(col){
+  if(sortCol===col)sortAsc=!sortAsc;else{sortCol=col;sortAsc=false}
+  document.getElementById('sortBy').value=col;
+  applyFilters();
+}
+
+function resetFilters(){
+  document.getElementById('filterAsset').value='';
+  document.getElementById('filterTF').value='';
+  document.getElementById('filterCat').value='';
+  document.getElementById('filterPass').value='1';
+  document.getElementById('filterDD').value='-30';
+  document.getElementById('ddVal').textContent='-30%';
+  document.getElementById('filterPF').value='1.0';
+  document.getElementById('sortBy').value='consistency_score';
+  applyFilters();
+}
+
+function renderTable(){
+  document.getElementById('tableCount').textContent=filtered.length+' resultados';
+  const tbody=document.getElementById('tableBody');
+  tbody.innerHTML='';
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state"><div class="empty-icon">🔍</div><div>No hay estrategias con estos filtros.</div></div></td></tr>`;
+    return;
+  }
+  const catMap={trend_following:'pill-trend',momentum:'pill-mom',mean_reversion:'pill-mean',pattern_based:'pill-patt'};
+  const catLbl={trend_following:'Trend',momentum:'Mom',mean_reversion:'Mean',pattern_based:'Patt'};
+  const tfMap={H4:'pill-h4',H1:'pill-h1',M15:'pill-m15',M5:'pill-m15'};
+  filtered.slice(0,150).forEach(r=>{
+    const pft=parseFloat(r.train_pf)||0,pfv=parseFloat(r.valid_pf)||0,pff=parseFloat(r.fwd_pf)||0;
+    const dd=parseFloat(r.fwd_max_dd)||0,cons=parseFloat(r.consistency_score)||0;
+    const cal=parseFloat(r.fwd_calmar)||0,tr=parseInt(r.fwd_trades)||0;
+    const pass=r.all_periods_pass==1;
+    const pfClass=pff>=pfv&&pff>=pft?'pf-up':pff<pfv?'pf-down':'pf-flat';
+    const ddColor=dd>=-5?'var(--green)':dd>=-10?'var(--yellow)':'var(--red)';
+    const star=r.starred?'⭐ ':'';
+    tbody.innerHTML+=`
+      <tr onclick="showDetail(${r.id})" style="cursor:pointer" class="${selectedId===r.id?'selected':''}">
+        <td class="mono" style="color:var(--muted)">${r.id}</td>
+        <td><span style="font-family:var(--mono);font-size:.78rem">${star}${(r.name||'').slice(0,16)}</span></td>
+        <td><span style="font-size:.75rem;color:var(--muted)">${r.asset||'-'}</span></td>
+        <td><span class="pill ${tfMap[r.timeframe]||'pill-h4'}">${r.timeframe||'-'}</span></td>
+        <td><span class="pill ${catMap[r.category]||''}">${catLbl[r.category]||r.category}</span></td>
+        <td><div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" style="width:${cons}%;background:${cons>90?'var(--green)':cons>75?'var(--yellow)':'var(--red)'}"></div></div>
+          <div class="progress-label" style="color:${cons>90?'var(--green)':cons>75?'var(--yellow)':'var(--red)'}">${cons.toFixed(1)}</div>
+        </div></td>
+        <td><div class="pf-group">
+          <span class="pf-val">${pft.toFixed(2)}</span><span class="pf-arrow">→</span>
+          <span class="pf-val">${pfv.toFixed(2)}</span><span class="pf-arrow">→</span>
+          <span class="pf-val ${pfClass}" style="font-weight:600">${pff.toFixed(2)}</span>
+        </div></td>
+        <td class="mono" style="color:${ddColor}">${dd.toFixed(2)}%</td>
+        <td class="mono" style="color:${cal>=1?'var(--green)':cal>=.5?'var(--yellow)':'var(--muted)'}">${cal.toFixed(2)}</td>
+        <td class="mono" style="color:${tr>=100?'var(--green)':tr>=50?'var(--yellow)':'var(--muted)'}">${tr}</td>
+        <td><span class="pill ${pass?'pill-pass':'pill-fail'}">${pass?'✓ SI':'✗ NO'}</span></td>
+        <td><button class="btn btn-ghost" style="padding:.25rem .6rem;font-size:.72rem" onclick="event.stopPropagation();showDetail(${r.id})">Ver →</button></td>
+      </tr>`;
+  });
+}
+
+function showDetail(id){
+  const r=allData.find(x=>x.id==id);
+  if(!r)return;
+  selectedId=id; renderTable();
+  document.getElementById('detailPanel').classList.add('visible');
+  document.getElementById('detailTitle').textContent=`ID #${r.id} — ${r.name}`;
+  document.getElementById('detailSub').textContent=`${r.asset} · ${r.timeframe} · ${r.category} · Consistencia: ${parseFloat(r.consistency_score||0).toFixed(1)}/100`;
+  document.getElementById('detailPeriod').innerHTML=[
+    ['Profit Factor',r.train_pf,r.valid_pf,r.fwd_pf,v=>v.toFixed(3)],
+    ['Max Drawdown',r.train_max_dd,r.valid_max_dd,r.fwd_max_dd,v=>v.toFixed(2)+'%'],
+  ].map(([l,t,v,f,fmt])=>`<tr><td style="font-size:.72rem;color:var(--muted);text-align:left">${l}</td><td class="period-train">${fmt(parseFloat(t)||0)}</td><td class="period-valid">${fmt(parseFloat(v)||0)}</td><td class="period-fwd">${fmt(parseFloat(f)||0)}</td></tr>`).join('');
+  document.getElementById('detailMetrics').innerHTML=[
+    ['Calmar Ratio',r.fwd_calmar,v=>v.toFixed(3)],
+    ['Sharpe Ratio',r.fwd_sharpe,v=>v.toFixed(3)],
+    ['Recovery Factor',r.fwd_recovery,v=>v.toFixed(3)],
+    ['Win Rate',r.fwd_win_rate,v=>v.toFixed(1)+'%'],
+    ['Total Trades',r.fwd_trades,v=>Math.round(v)],
+    ['Expectancy $',r.fwd_expectancy,v=>'$'+v.toFixed(2)],
+    ['Payoff Ratio',r.fwd_payoff,v=>v.toFixed(3)],
+    ['Retorno anual',r.fwd_annual_return,v=>v.toFixed(2)+'%'],
+  ].map(([l,val,fmt])=>`<div class="kpi-row"><span class="kpi-name">${l}</span><span class="kpi-val">${fmt(parseFloat(val)||0)}</span></div>`).join('');
+  let el='',es='',ef='',ep='';
+  try{el=JSON.parse((r.entry_long||'[]').replace(/'/g,'"')).join(', ')}catch{}
+  try{es=JSON.parse((r.entry_short||'[]').replace(/'/g,'"')).join(', ')}catch{}
+  try{ef=JSON.parse((r.filters||'[]').replace(/'/g,'"')).join(', ')}catch{}
+  try{ep=Object.entries(JSON.parse(r.params||'{}')).map(([k,v])=>`${k}=${v}`).join(' · ')}catch{}
+  document.getElementById('detailSignals').innerHTML=`
+    <div class="signals-box">
+      <div class="signal-line"><span class="signal-label signal-long">Long</span><span class="signal-val">${el||'-'}</span></div>
+      <div class="signal-line"><span class="signal-label signal-short">Short</span><span class="signal-val">${es||'-'}</span></div>
+      <div class="signal-line"><span class="signal-label signal-filter">Filtro</span><span class="signal-val">${ef||'-'}</span></div>
+    </div>
+    <div style="margin-top:.75rem;font-size:.68rem;color:var(--muted);font-family:var(--mono);line-height:1.6">${ep}</div>`;
+  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDetail(){
+  document.getElementById('detailPanel').classList.remove('visible');
+  selectedId=null; renderTable();
+}
+
+function exportStrategy(){
+  const r=allData.find(x=>x.id==selectedId);
+  if(!r)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(r,null,2)],{type:'application/json'}));
+  a.download=`strategy_${r.id}_${r.name}.json`;
+  a.click();
+}
+
+function copyParams(){
+  const r=allData.find(x=>x.id==selectedId);
+  if(!r)return;
+  try{navigator.clipboard.writeText(JSON.stringify(JSON.parse(r.params||'{}'),null,2));alert('Parámetros copiados')}
+  catch{alert('Usa exportar JSON')}
+}
+
+// ══════════════════════════════════════════
+//  GENERADOR DE EA MQL5
+// ══════════════════════════════════════════
+
+function generateEA(){
+  const r=allData.find(x=>x.id==selectedId);
+  if(!r){alert('Selecciona una estrategia primero');return}
+
+  let params={};
+  try{params=JSON.parse(r.params||'{}')}catch{}
+  let entryLong=[],entryShort=[],filters=[];
+  try{entryLong=JSON.parse((r.entry_long||'[]').replace(/'/g,'"'))}catch{}
+  try{entryShort=JSON.parse((r.entry_short||'[]').replace(/'/g,'"'))}catch{}
+  try{filters=JSON.parse((r.filters||'[]').replace(/'/g,'"'))}catch{}
+
+  const name=`StrategyFinder_ID${r.id}`;
+  const asset=r.asset||'XAUUSD';
+  const tf=r.timeframe||'H4';
+  const magic=10000+parseInt(r.id);
+
+  const pft=parseFloat(r.train_pf||0).toFixed(3);
+  const pfv=parseFloat(r.valid_pf||0).toFixed(3);
+  const pff=parseFloat(r.fwd_pf||0).toFixed(3);
+  const ddf=parseFloat(r.fwd_max_dd||0).toFixed(2);
+  const tr=parseInt(r.fwd_trades||0);
+  const cons=parseFloat(r.consistency_score||0).toFixed(1);
+
+  const macdFast  = params.macd_fast   || 12;
+  const macdSlow  = params.macd_slow   || 26;
+  const macdSig   = params.macd_signal || 9;
+  const emaFast   = params.ema_fast    || 20;
+  const emaSlow   = params.ema_slow    || 200;
+  const rsiPeriod = params.rsi_period  || 14;
+  const rsiOS     = params.rsi_os      || 30;
+  const cciPeriod = params.cci_period  || 20;
+  const donPeriod = params.don_period  || 20;
+  const stPeriod  = params.st_period   || 14;
+  const stMult    = params.st_mult     || 3.0;
+  const obvPeriod = params.obv_period  || 20;
+
+  // Construir condiciones LONG
+  const longConds = buildLongConditions(entryLong, filters);
+  const shortConds = buildShortConditions(entryShort, filters);
+  const indicators = buildIndicators(entryLong, entryShort, filters, {macdFast,macdSlow,macdSig,emaFast,emaSlow,rsiPeriod,cciPeriod,donPeriod,stPeriod,stMult,obvPeriod});
+
+  const code = `//+------------------------------------------------------------------+
+//|  ${name}.mq5                                    |
+//|  ${asset} ${tf} — Generado por Strategy Finder Dashboard       |
+//|                                                                  |
+//|  Long  : ${entryLong.join(', ')||'N/A'}
+//|  Short : ${entryShort.join(', ')||'N/A'}
+//|  Filtro: ${filters.join(', ')||'N/A'}
+//|                                                                  |
+//|  Train  PF: ${pft}  |  Valid  PF: ${pfv}  |  Forward PF: ${pff}  |
+//|  DD Forward: ${ddf}%  |  Trades: ${tr}  |  Consistencia: ${cons}/100  |
+//+------------------------------------------------------------------+
+
+#property copyright "Strategy Finder — ID ${r.id}"
+#property version   "1.00"
+#property strict
+
+#include <Trade\\Trade.mqh>
+#include <Trade\\PositionInfo.mqh>
+
+CTrade        trade;
+CPositionInfo posInfo;
+
+//--- MACD
+input group "=== MACD ==="
+input int    InpMacdFast    = ${macdFast};
+input int    InpMacdSlow    = ${macdSlow};
+input int    InpMacdSignal  = ${macdSig};
+
+//--- EMA
+input group "=== EMA Filtro (fast=${emaFast} slow=${emaSlow}) ==="
+input int    InpEmaFast     = ${emaFast};
+input int    InpEmaSlow     = ${emaSlow};
+
+//--- RSI
+input group "=== RSI (period=${rsiPeriod} os=${rsiOS}) ==="
+input int    InpRsiPeriod   = ${rsiPeriod};
+input double InpRsiOversold = ${rsiOS};
+
+//--- CCI
+input group "=== CCI (period=${cciPeriod}) ==="
+input int    InpCCIPeriod   = ${cciPeriod};
+
+//--- Donchian
+input group "=== Donchian (period=${donPeriod}) ==="
+input int    InpDonPeriod   = ${donPeriod};
+
+//--- Supertrend
+input group "=== Supertrend (period=${stPeriod} mult=${stMult}) ==="
+input int    InpStPeriod    = ${stPeriod};
+input double InpStMult      = ${stMult};
+
+//--- OBV
+input group "=== OBV ==="
+input int    InpOBVPeriod   = ${obvPeriod};
+
+//--- Riesgo
+input group "=== Gestion de Riesgo ==="
+input double InpRiskPct     = 1.0;
+input double InpAtrSlMult   = 1.5;
+input double InpAtrTpMult   = 2.5;
+input int    InpAtrPeriod   = 14;
+input double InpMaxDDPct    = 100.0;
+
+//--- Config
+input group "=== Configuracion ==="
+input bool   InpAllowLong   = true;
+input bool   InpAllowShort  = true;
+input int    InpMagicNum    = ${magic};
+
+//--- Handles
+int    hMacd, hEmaFast, hEmaSlow, hAtr, hRsi, hCCI, hOBV, hStAtr;
+double dPeakBalance;
+
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   trade.SetExpertMagicNumber(InpMagicNum);
+   trade.SetDeviationInPoints(30);
+   trade.SetTypeFilling(ORDER_FILLING_IOC);
+
+   hMacd    = iMACD(_Symbol, PERIOD_CURRENT, InpMacdFast, InpMacdSlow, InpMacdSignal, PRICE_CLOSE);
+   hEmaFast = iMA(_Symbol, PERIOD_CURRENT, InpEmaFast, 0, MODE_EMA, PRICE_CLOSE);
+   hEmaSlow = iMA(_Symbol, PERIOD_CURRENT, InpEmaSlow, 0, MODE_EMA, PRICE_CLOSE);
+   hAtr     = iATR(_Symbol, PERIOD_CURRENT, InpAtrPeriod);
+   hRsi     = iRSI(_Symbol, PERIOD_CURRENT, InpRsiPeriod, PRICE_CLOSE);
+   hCCI     = iCCI(_Symbol, PERIOD_CURRENT, InpCCIPeriod, PRICE_TYPICAL);
+   hOBV     = iOBV(_Symbol, PERIOD_CURRENT, VOLUME_TICK);
+   hStAtr   = iATR(_Symbol, PERIOD_CURRENT, InpStPeriod);
+
+   if(hMacd==INVALID_HANDLE || hEmaFast==INVALID_HANDLE ||
+      hEmaSlow==INVALID_HANDLE || hAtr==INVALID_HANDLE)
+   {
+      Print("ERROR creando handles: ", GetLastError());
+      return INIT_FAILED;
+   }
+
+   dPeakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   Print("=== SF ID${r.id} ${r.name} iniciado ===");
+   Print("Long: ${entryLong.join(', ')}");
+   Print("Short: ${entryShort.join(', ')}");
+   Print("Filtros: ${filters.join(', ')}");
+   return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   IndicatorRelease(hMacd); IndicatorRelease(hEmaFast);
+   IndicatorRelease(hEmaSlow); IndicatorRelease(hAtr);
+   IndicatorRelease(hRsi); IndicatorRelease(hCCI);
+   IndicatorRelease(hOBV); IndicatorRelease(hStAtr);
+}
+
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   static datetime lastBar = 0;
+   datetime currentBar = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(currentBar == lastBar) return;
+   lastBar = currentBar;
+
+   // Control drawdown
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double equity  = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(balance > dPeakBalance) dPeakBalance = balance;
+   if(dPeakBalance > 0 && InpMaxDDPct < 100)
+   {
+      double dd = (dPeakBalance - equity) / dPeakBalance * 100.0;
+      if(dd >= InpMaxDDPct){ Print("DD max alcanzado: ", dd); CloseAll(); return; }
+   }
+
+   // Leer indicadores
+   double macdMain[3], macdSig[3], emaF[3], emaS[3], atrV[2];
+   double rsiV[3], cciV[3], obvV[25], stAtrV[2];
+   double high1=iHigh(_Symbol,PERIOD_CURRENT,1), low1=iLow(_Symbol,PERIOD_CURRENT,1);
+   double close1=iClose(_Symbol,PERIOD_CURRENT,1);
+   double open2=iOpen(_Symbol,PERIOD_CURRENT,2), close2=iClose(_Symbol,PERIOD_CURRENT,2);
+
+   if(CopyBuffer(hMacd,0,1,3,macdMain)<3)return;
+   if(CopyBuffer(hMacd,1,1,3,macdSig)<3)return;
+   if(CopyBuffer(hEmaFast,0,1,3,emaF)<3)return;
+   if(CopyBuffer(hEmaSlow,0,1,3,emaS)<3)return;
+   if(CopyBuffer(hAtr,0,1,2,atrV)<2)return;
+   if(CopyBuffer(hRsi,0,1,3,rsiV)<3)return;
+   if(CopyBuffer(hCCI,0,1,3,cciV)<3)return;
+   if(CopyBuffer(hStAtr,0,1,2,stAtrV)<2)return;
+   if(CopyBuffer(hOBV,0,1,InpOBVPeriod+1,obvV)<InpOBVPeriod+1)return;
+
+   double macdNow=macdMain[0], macdPrev=macdMain[1];
+   double sigNow=macdSig[0],   sigPrev=macdSig[1];
+   double emaFNow=emaF[0], emaFPrev=emaF[1];
+   double emaSNow=emaS[0], emaSPrev=emaS[1];
+   double atr=atrV[0], rsi=rsiV[0];
+   double cciNow=cciV[0], cciPrev=cciV[1];
+
+   // Donchian Channel
+   double donHigh=0, donLow=999999;
+   for(int i=2;i<=InpDonPeriod+1;i++){
+      double h=iHigh(_Symbol,PERIOD_CURRENT,i);
+      double l=iLow(_Symbol,PERIOD_CURRENT,i);
+      if(h>donHigh)donHigh=h; if(l<donLow)donLow=l;
+   }
+
+   // OBV rising
+   double obvNow=obvV[0], obvSum=0;
+   for(int i=0;i<InpOBVPeriod;i++) obvSum+=obvV[i];
+   bool obvRising=(obvNow > obvSum/InpOBVPeriod);
+
+   // Supertrend simplificado
+   double stLower=(high1+low1)/2.0 - InpStMult*stAtrV[0];
+   bool supertrendBull=(close1>stLower);
+
+   // Filtros
+   bool filtroAlcista=(emaFNow>emaSNow);
+   bool filtroBajista=(emaFNow<emaSNow);
+   bool filtroST=supertrendBull && filtroAlcista;
+
+   ${longConds}
+
+   ${shortConds}
+
+   bool hayLong=TienePos(POSITION_TYPE_BUY);
+   bool hayShort=TienePos(POSITION_TYPE_SELL);
+
+   if(condLong && InpAllowLong && !hayLong && !hayShort)
+   {
+      double ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+      double sl=ask-InpAtrSlMult*atr, tp=ask+InpAtrTpMult*atr;
+      double lots=CalcLotes(ask,sl);
+      if(lots>0) if(trade.Buy(lots,_Symbol,ask,sl,tp,"SF${r.id}_L"))
+         Print("LONG | Ask:",ask," SL:",sl," TP:",tp," Lots:",lots);
+   }
+
+   if(condShort && InpAllowShort && !hayShort && !hayLong)
+   {
+      double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID);
+      double sl=bid+InpAtrSlMult*atr, tp=bid-InpAtrTpMult*atr;
+      double lots=CalcLotes(bid,sl);
+      if(lots>0) if(trade.Sell(lots,_Symbol,bid,sl,tp,"SF${r.id}_S"))
+         Print("SHORT | Bid:",bid," SL:",sl," TP:",tp," Lots:",lots);
+   }
+
+   if(hayLong  && condShort){ CerrarPorTipo(POSITION_TYPE_BUY);  Print("LONG cerrado"); }
+   if(hayShort && condLong) { CerrarPorTipo(POSITION_TYPE_SELL); Print("SHORT cerrado"); }
+}
+
+//+------------------------------------------------------------------+
+double CalcLotes(double entrada, double sl)
+{
+   double dist=MathAbs(entrada-sl); if(dist<=0)return 0;
+   double balance=AccountInfoDouble(ACCOUNT_BALANCE);
+   double riesgo=balance*InpRiskPct/100.0;
+   double tickSz=SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
+   double tickVal=SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_VALUE);
+   double lotStep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
+   double minLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
+   double maxLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
+   if(tickSz<=0||tickVal<=0)return 0;
+   double valPorLote=(dist/tickSz)*tickVal;
+   if(valPorLote<=0)return 0;
+   double lotes=riesgo/valPorLote;
+   lotes=MathFloor(lotes/lotStep)*lotStep;
+   return MathMax(minLot,MathMin(maxLot,lotes));
+}
+
+bool TienePos(ENUM_POSITION_TYPE tipo)
+{
+   for(int i=PositionsTotal()-1;i>=0;i--)
+      if(posInfo.SelectByIndex(i))
+         if(posInfo.Symbol()==_Symbol&&posInfo.Magic()==InpMagicNum&&posInfo.PositionType()==tipo)
+            return true;
+   return false;
+}
+
+void CerrarPorTipo(ENUM_POSITION_TYPE tipo)
+{
+   for(int i=PositionsTotal()-1;i>=0;i--)
+      if(posInfo.SelectByIndex(i))
+         if(posInfo.Symbol()==_Symbol&&posInfo.Magic()==InpMagicNum&&posInfo.PositionType()==tipo)
+            trade.PositionClose(posInfo.Ticket());
+}
+
+void CloseAll()
+{
+   for(int i=PositionsTotal()-1;i>=0;i--)
+      if(posInfo.SelectByIndex(i))
+         if(posInfo.Symbol()==_Symbol&&posInfo.Magic()==InpMagicNum)
+            trade.PositionClose(posInfo.Ticket());
+}
+//+------------------------------------------------------------------+`;
+
+  currentEACode = code;
+  currentEAName = name;
+  document.getElementById('eaModalTitle').textContent = `EA: ${name}.mq5 — ${asset} ${tf}`;
+  document.getElementById('eaCode').textContent = code;
+  document.getElementById('eaModal').classList.add('visible');
+}
+
+function buildLongConditions(entryLong, filters){
+  const hasFilter = filters.includes('ema_crossover_bullish') || filters.includes('above_ema_trend');
+  const hasST = filters.includes('supertrend_bull');
+  let filterExpr = hasFilter ? 'filtroAlcista' : 'true';
+  if(hasST) filterExpr += ' && filtroST';
+
+  let conds = [];
+  if(entryLong.includes('macd_crossover'))        conds.push('(macdNow>sigNow)&&(macdPrev<=sigPrev)');
+  if(entryLong.includes('macd_above_zero'))        conds.push('macdNow>0.0');
+  if(entryLong.includes('macd_histogram_positive'))conds.push('macdNow>0.0');
+  if(entryLong.includes('donchian_breakout'))      conds.push('close1>donHigh');
+  if(entryLong.includes('obv_rising'))             conds.push('obvRising');
+  if(entryLong.includes('rsi_oversold'))           conds.push('rsi<InpRsiOversold');
+  if(entryLong.includes('pattern_engulfing'))      conds.push('(close2<open2)&&(close1>open1)&&(open1<=close2)&&(close1>=open2)');
+  if(entryLong.includes('rsi_divergence_approx'))  conds.push('rsi<35.0');
+  if(entryLong.includes('ema_crossover_bullish'))  conds.push('(emaFNow>emaSNow)&&(emaFPrev<=emaSPrev)');
+  if(!conds.length) conds.push('macdNow>sigNow');
+
+  return `// CONDICION LONG: ${entryLong.join(' + ')}
+   bool condLong = (${conds.join('&&')}) && ${filterExpr};`;
+}
+
+function buildShortConditions(entryShort, filters){
+  let conds = [];
+  if(entryShort.includes('cci_cross_zero'))      conds.push('(cciNow<0.0)&&(cciPrev>=0.0)');
+  if(entryShort.includes('ema_cross_fast_slow')) conds.push('(emaFNow<emaSNow)&&(emaFPrev>=emaSPrev)');
+  if(entryShort.includes('rsi_overbought'))      conds.push('rsi>70.0');
+  if(entryShort.includes('rsi_oversold'))        conds.push('rsi<InpRsiOversold');
+  if(entryShort.includes('macd_above_zero'))     conds.push('macdNow<0.0');
+  if(entryShort.includes('pattern_pin_bar'))     conds.push('(MathAbs(close1-open1)<(high1-low1)*0.3)');
+  if(entryShort.includes('donchian_breakout'))   conds.push('close1<donLow');
+  if(entryShort.includes('price_above_ema'))     conds.push('close1<emaFNow');
+  if(entryShort.includes('golden_death_cross'))  conds.push('(emaFNow<emaSNow)&&(emaFPrev>=emaSPrev)');
+  if(!conds.length) conds.push('(cciNow<0.0)&&(cciPrev>=0.0)');
+
+  const hasFilter = filters.includes('ema_crossover_bullish') || filters.includes('above_ema_trend');
+  const filterExpr = hasFilter ? '!filtroAlcista' : 'true';
+
+  return `// CONDICION SHORT: ${entryShort.join(' + ')}
+   bool condShort = (${conds.join('||')}) && ${filterExpr};`;
+}
+
+function buildIndicators(el,es,f,p){ return ''; }
+
+function closeEAModal(){ document.getElementById('eaModal').classList.remove('visible'); }
+
+function downloadEA(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([currentEACode],{type:'text/plain'}));
+  a.download=currentEAName+'.mq5';
+  a.click();
+}
+
+function copyEA(){
+  try{navigator.clipboard.writeText(currentEACode);alert('Código copiado al portapapeles')}
+  catch{alert('Usa el botón Descargar .mq5')}
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('eaModal').addEventListener('click',function(e){
+  if(e.target===this)closeEAModal();
+});
+</script>
+</body>
+</html>
